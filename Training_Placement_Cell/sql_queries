@@ -1,0 +1,130 @@
+student_database -> CREATE TABLE student_database (
+  id INT(11) NOT NULL,
+  name VARCHAR(50) NOT NULL,
+  rollno VARCHAR(10) NOT NULL,
+  cpi FLOAT(4,2) NOT NULL,
+  graduation_year INT(4) NOT NULL,
+  qualification VARCHAR(50) NOT NULL,
+  timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (rollno),
+  FOREIGN KEY (id) REFERENCES student_auth(id)
+);
+
+student_auth -> CREATE TABLE student_auth (
+  id INT(11) NOT NULL,
+  email VARCHAR(50) NOT NULL,
+  password VARCHAR(255) NOT NULL,
+  timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  FOREIGN KEY (id) REFERENCES student_database(id)
+);
+
+CREATE TABLE company_auth (
+  id INT(11) NOT NULL AUTO_INCREMENT,
+  email VARCHAR(50) NOT NULL,
+  password VARCHAR(255) NOT NULL,
+  timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id)
+);
+
+create table company_database (
+  id int(11) not null ,
+  name varchar(50) not null, 
+  since_year int(4) not null, 
+  timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (id) REFERENCES company_auth(id)
+);
+
+CREATE TABLE company_roles (
+  rid INT(11) AUTO_INCREMENT not null PRIMARY KEY,
+  id INT(11) not null,
+  contact_phone VARCHAR(10) not null,
+  contact_email VARCHAR(255) not null,
+  year date null,
+  interview_mode ENUM('online', 'offline') not null,
+  min_cpi FLOAT not null,
+  qualification ENUM('btech', 'mtech', 'phd', 'others') not null,
+  salary DECIMAL(10, 2) not null,
+  role ENUM('SDE', 'ML ENGINEER', 'RESEARCH', 'DATA SCIENTIST', 'ANALYST', 'CONSULTANT', 'HR', 'CORE', 'OTHERS'),
+  timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (id) REFERENCES company_auth(id)
+);
+
+student_pref -> CREATE TABLE student_pref (   pid INT(11) NOT NULL AUTO_INCREMENT primary key,   id INT(11) NOT NULL,   role ENUM('SDE', 'ML ENGINEER', 'RESEARCH', 'DATA SCIENTIST', 'ANALYST', 'CONSULTANT', 'HR', 'CORE', 'OTHERS') NOT NULL, timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,   FOREIGN KEY (id) REFERENCES student_auth(id) );
+
+
+delete trigger -> DELIMITER //
+CREATE TRIGGER delete_student_data
+AFTER DELETE ON student_database
+FOR EACH ROW
+BEGIN
+    DELETE FROM student_auth WHERE id = OLD.id;
+END //
+DELIMITER ;
+
+student_marks -> CREATE TABLE student_marks (
+  cid INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  id INT NOT NULL,
+  class VARCHAR(10) NOT NULL,
+  marks FLOAT NOT NULL,
+  script VARCHAR(255),
+  timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (id) REFERENCES student_auth(id)
+);
+
+alum_auth -> CREATE TABLE alum_auth (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  email VARCHAR(255) NOT NULL,
+  password VARCHAR(255) NOT NULL,
+  timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+alum_database -> CREATE TABLE alum_database (
+  did INT AUTO_INCREMENT PRIMARY KEY,
+  id INT NOT NULL,
+  name  VARCHAR(100) NOT NULL,
+  graduation_year YEAR NOT NULL,
+  rollno VARCHAR(10) NOT NULL,
+  cpi FLOAT DEFAULT NULL,
+  qualification ENUM('btech', 'mtech', 'phd', 'others') NOT NULL,
+  FOREIGN KEY (id) REFERENCES alum_auth(id)
+);
+
+trigger to update previous email -> DELIMITER //
+
+CREATE TRIGGER insert_alum_database_trigger
+BEFORE INSERT ON alum_database
+FOR EACH ROW
+BEGIN
+  DECLARE email VARCHAR(255);
+  SELECT sa.email INTO email FROM student_auth sa
+  JOIN student_database sd ON sa.id = sd.id
+  WHERE sd.rollno = NEW.rollno;
+  SET NEW.previous_email = email;
+END //
+
+DELIMITER ;
+
+student_placed -> CREATE TABLE student_placed (
+    cid INT(11) NOT NULL,
+    sid INT(11) NOT NULL,
+    PRIMARY KEY (cid, sid),
+    FOREIGN KEY (cid) REFERENCES company_roles(rid),
+    FOREIGN KEY (sid) REFERENCES student_auth(id)
+);
+
+alum_placed -> CREATE TABLE alum_placed (
+  pid INT AUTO_INCREMENT PRIMARY KEY,
+  id INT,
+  company_name VARCHAR(50),
+  year date null,
+  salary DECIMAL(10, 2),
+  start_date DATE,
+  end_date DATE,
+  role ENUM('SDE', 'ML ENGINEER', 'RESEARCH', 'DATA SCIENTIST', 'ANALYST', 'CONSULTANT', 'HR', 'CORE', 'OTHERS'),
+  FOREIGN KEY (id) REFERENCES alum_auth(id)
+);
+
+
+
+
