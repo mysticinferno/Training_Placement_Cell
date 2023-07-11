@@ -1,2 +1,2 @@
-# database_project
+# Training_Placement_Cell
  
